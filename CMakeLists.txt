@@ -1,2 +1,2 @@
-PROJECT(MYPROG)
-ADD_EXECUTABLE(myprog myprog.cpp myfunc.cpp)
+PROJECT(timeLogging)
+ADD_EXECUTABLE(timeLogging my_shmem.hpp timeLogging.cpp)
