@@ -1,2 +1,2 @@
-PROJECT(MYPROG)
-ADD_EXECUTABLE(myprog myprog.cpp myfunc.cpp)
+PROJECT(usbTemperature)
+ADD_EXECUTABLE(usbTemperature my_serial.hpp usbTemperature.cpp)
