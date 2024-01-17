@@ -113,6 +113,7 @@ void logSecondCopy() {
 }
 
 void makeCopy(const std::string& copyName) {
+#ifdef _WIN32
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof(si) );
@@ -137,6 +138,19 @@ void makeCopy(const std::string& copyName) {
 		shared_data.Data()->writeLog("Error! Previous copy is still running.");
 		shared_data.Unlock();
 	}
+#else
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "Fork failed" << std::endl;
+        return;
+    }
+
+    if (pid == 0) {
+        system((EXE_NAME + " " + copyName).c_str());
+        exit(EXIT_SUCCESS);
+    }
+#endif
 }
 
 void copyThreadMaker() {
