@@ -13,6 +13,7 @@ std::string getCurrentTime();
 
 std::mutex mtx;
 
+#define EXE_NAME "timeLogging.exe"
 #define MEMO_TEXT "Init memo"
 struct my_data
 {
@@ -84,11 +85,10 @@ void writerThread() {
 		shared_data.Lock();
 		shared_data.Data()->counter++;
 		shared_data.Unlock();
-		std::lock_guard<std::mutex> unlock(mtx);
 	}
 }
 
-void firstCopyThread() {
+void logFirstCopy() {
 	shared_data.Lock();
 	shared_data.Data()->writeLog(
 		"Process ID: " + std::to_string(getProcessId()) +
@@ -99,7 +99,7 @@ void firstCopyThread() {
 	shared_data.Unlock();
 }
 
-void secodCopyThread() {
+void logSecondCopy() {
 	shared_data.Lock();
 	shared_data.Data()->writeLog(
 		"Process ID: " + std::to_string(getProcessId()) +
@@ -112,24 +112,49 @@ void secodCopyThread() {
 	shared_data.Unlock();
 }
 
-void copyThreadMaker() {
-	while(true) {
-		bool isAllowedToCopy = true;
-		if (isAllowedToCopy) {
-			isAllowedToCopy = false;
-			std::thread fCopy(firstCopyThread);
-			std::thread sCopy(secodCopyThread);
-			fCopy.join();
-			sCopy.join();
-			isAllowedToCopy = true;
-		}
-		else {
-			shared_data.Lock();
-			shared_data.Data()->writeLog("Error! Previous copy is still running.");
-			shared_data.Unlock();
-		}
+void makeCopy(const std::string& copyName) {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory( &si, sizeof(si) );
+	ZeroMemory( &pi, sizeof(pi) );
+
+	if (CreateProcess(EXE_NAME.c_str(),
+                      copyName.c_str(),
+                      NULL,
+                      NULL,
+                      FALSE,
+                      0, 
+                      NULL, 
+                      NULL,
+                      &si, 
+                      &pi)
+    ) {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
 	}
-	std::this_thread::sleep_for(std::chrono::seconds(3));
+	else {
+		shared_data.Lock();
+		shared_data.Data()->writeLog("Error! Previous copy is still running.");
+		shared_data.Unlock();
+	}
+}
+
+void copyThreadMaker() {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	STARTUPINFO si2;
+	PROCESS_INFORMATION pi2;
+	
+	ZeroMemory( &si, sizeof(si) );
+	ZeroMemory( &pi, sizeof(pi) );
+	ZeroMemory( &si2, sizeof(si2) );
+	ZeroMemory( &pi2, sizeof(pi2) );
+
+	while(true) {
+		makeCopy("1");
+		makeCopy("2");
+		std::this_thread::sleep_for(std::chrono::seconds(3));
+	}
 }
 
 bool isIntNumber(std::string& str) {
@@ -141,11 +166,23 @@ bool isIntNumber(std::string& str) {
 	return true;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     if (!shared_data.IsValid()) {
         std::cout << "Failed to create shared memory block!" << std::endl;
         return -1;
     }
+
+	if (argc > 1) {
+		if (strcmp(argv[1], "1") == 0) {
+			logFirstCopy();
+			return 0;
+		}
+		if (strcmp(argv[1], "2") == 0) {
+			logSecondCopy();
+			return 0;
+		}
+	}
+
 
 	std::thread mthread;
 	std::thread cthread;
