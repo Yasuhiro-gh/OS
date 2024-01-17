@@ -154,6 +154,7 @@ void makeCopy(const std::string& copyName) {
 }
 
 void copyThreadMaker() {
+#ifdef _WIN32
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si2;
@@ -163,7 +164,7 @@ void copyThreadMaker() {
 	ZeroMemory( &pi, sizeof(pi) );
 	ZeroMemory( &si2, sizeof(si2) );
 	ZeroMemory( &pi2, sizeof(pi2) );
-
+#endif
 	while(true) {
 		makeCopy("1");
 		makeCopy("2");
